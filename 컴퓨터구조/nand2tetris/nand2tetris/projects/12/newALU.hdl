@@ -1,0 +1,68 @@
+CHIP newALU {
+    IN  
+        x[16], y[16],  // 16-bit inputs        
+        zx, // zero the x input?
+        nx, // negate the x input?
+        zy, // zero the y input?
+        ny, // negate the y input?
+        f,  // compute out = x + y (if 1) or x & y (if 0)
+        no, // negate the out output?
+        shiftsel, CTRL, CTRL1, AorS;
+
+    OUT 
+        out[16], // 16-bit output
+        zr, // 1 if (out == 0), 0 otherwise
+        ng; // 1 if (out < 0),  0 otherwise
+
+    PARTS:
+   // Put you code here:
+//zx
+Mux16 (a=x, b[0..15]=false, sel=zx, out=zndx);
+
+//nx
+Not16 (in=zndx, out=notx);
+Mux16 (a=zndx, b=notx, sel=nx, out=nndx);
+
+//zy
+Mux16 (a=y, b[0..15]=false, sel=zy, out=zndy);
+
+//ny
+Not16 (in=zndy, out=noty);
+Mux16 (a=zndy, b=noty, sel=ny, out=nndy);
+
+//f
+Add16 (a=nndx, b=nndy, out=add);
+And16 (a=nndx, b=nndy, out=and);
+Mux16 (a=and, b=add, sel=f, out=fxy);
+
+//no, ng
+Not16 (in=fxy, out=notfxy);
+Mux16 (a=fxy, b=notfxy, sel=no, out=outALU, out[0..7]=lower, out[8..15]=upper, out[15]=ng);
+
+//zr
+Or8Way (in=lower, out=orA);
+Or8Way (in=upper, out=orB);
+Or (a=orA, b=orB, out=or);
+Not (in=or, out=zr);
+
+//Ashift
+Ashift(in=x,LorR=shiftsel, out=Ashiftout);
+
+//Rshift
+Rshift(in=x,LorR=shiftsel, out=Rshiftout);
+
+//Lshift
+Lshift(in=x,LorR=shiftsel, out=Lshiftout);
+
+//Xor16
+Xor16(a=x,b=y,out=xorout);
+
+Mux16(a=Ashiftout, b=Rshiftout, sel=CTRL, out=shiftoutAR);  //산술 or 회전
+Mux16(a=Lshiftout, b=xorout, sel=CTRL,out=shiftoutLxo);  //논리 or Xor
+
+Mux16(a=shiftoutAR,b=shiftoutLxo,sel=CTRL1,out=shiftout);  //(산술or회전) or (논리orXor) 
+
+//Mux4Way16(a=Ashiftout, b=Rshiftout, c=Lshiftout, d=xorout, sel=CTRL, out=shiftout);
+
+Mux16(a=outALU, b=shiftout, sel=AorS, out=out);  //AorS=1이면 shift
+}

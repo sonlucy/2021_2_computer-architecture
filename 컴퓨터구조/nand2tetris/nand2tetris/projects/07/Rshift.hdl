@@ -1,0 +1,26 @@
+CHIP Rshift{
+	IN x[16], LorR;
+	OUT out[16];
+
+	PARTS:
+
+Mux(a=x[15], b=x[1], sel=LorR, out=out[0]);
+Mux(a=x[0], b=x[2], sel=LorR, out=out[1]);
+Mux(a=x[1], b=x[3], sel=LorR, out=out[2]);
+Mux(a=x[2], b=x[4], sel=LorR, out=out[3]); 
+
+Mux(a=x[3], b=x[5], sel=LorR, out=out[4]);
+Mux(a=x[4], b=x[6], sel=LorR, out=out[5]);
+Mux(a=x[5], b=x[7], sel=LorR, out=out[6]);
+Mux(a=x[6], b=x[8], sel=LorR, out=out[7]);
+
+Mux(a=x[7], b=x[9], sel=LorR, out=out[8]);
+Mux(a=x[8], b=x[10], sel=LorR, out=out[9]);
+Mux(a=x[9], b=x[11], sel=LorR, out=out[10]);
+Mux(a=x[10], b=x[12], sel=LorR, out=out[11]);
+
+Mux(a=x[11], b=x[13], sel=LorR, out=out[12]);
+Mux(a=x[12], b=x[14], sel=LorR, out=out[13]);
+Mux(a=x[13], b=x[15], sel=LorR, out=out[14]);
+Mux(a=x[14], b=x[0], sel=LorR, out=out[15]);
+}

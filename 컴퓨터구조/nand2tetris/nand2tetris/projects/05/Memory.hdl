@@ -1,0 +1,112 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/Memory.hdl
+
+/**
+ * The complete address space of the Hack computer's memory,
+ * including RAM and memory-mapped I/O. 
+ * The chip facilitates read and write operations, as follows:
+ *     Read:  out(t) = Memory[address(t)](t)
+ *     Write: if load(t-1) then Memory[address(t-1)](t) = in(t-1)
+ * In words: the chip always outputs the value stored at the memory 
+ * location specified by address. If load==1, the in value is loaded 
+ * into the memory location specified by address. This value becomes 
+ * available through the out output from the next time step onward.
+ * Address space rules:
+ * Only the upper 16K+8K+1 words of the Memory chip are used. 
+ * Access to address>0x6000 is invalid. Access to any address in 
+ * the range 0x4000-0x5FFF results in accessing the screen memory 
+ * map. Access to address 0x6000 results in accessing the keyboard 
+ * memory map. The behavior in these addresses is described in the 
+ * Screen and Keyboard chip specifications given in the book.
+ */
+
+CHIP Memory {
+    IN in[16], load, address[15];
+    OUT out[16];
+
+    PARTS:  
+    // Put your code here:
+
+/*
+메모리 주소 밖이면 0(null)되도록
+
+16384 = 0100_0000_0000_0000
+24576 = 0110_0000_0000_0000
+
+14,13비트가 각각 
+0,0 이면 ram16k의 상단
+01이면 ram16k의 하단
+10이면 screen
+11이면 keyboard
+
+*/
+
+
+//#1
+    Not(in=address[13], out=notkbd);
+    And(a=address[14], b=notkbd, out=pickscreen);    //13,14비트가 각각 0,1일때
+    And(a=pickscreen,b=load, out=loadscreen);        //스크린에 로드     loadscreen
+
+
+//#2
+    Not(in=address[14], out=pickram);        //14비트가 0이면
+    And(a=pickram,b=load, out=loadram);
+
+/*
+//14,13비트 0,0 이면 ram16k의 상단
+Not(in=address[14], out=n14);
+Not(in=address[13], out=n13);
+
+And(a=n14, b=n13, out=loadram1);   //램의상단 위해
+
+//14.13비트 0,1이면 ram16k의 하단
+And(a=n14, b=address[13], out=loadram2);   //램의하단 위해
+*/
+
+    RAM16K(in=in, load=loadram, address=address[0..13], out=ramout);  ////////////////////////////램16k
+
+/*
+    RAM16K(in=in, load=loadram1, address=address[0..6], out=ramout1);  
+    RAM16K(in=in, load=loadram2, address=address[7..13], out=ramout2);
+*/
+
+
+    // This is only called if MSB(address) == 1   ////////////////////////////////????????????????????
+    Screen(in=in, load=loadscreen, address=address[0..12], out=screenout);   //14,13비트 제외하고 0..12비트주소
+    Keyboard(out=kbdout);                                                                ///screenout, kdbout
+
+
+/*
+    Mux4Way16(a[7..13]=false, a[0..6]=ramout[0..6], b=screenout, c[0..6]=false, c[7..13]=ramout[7..13],
+ d=kbdout,  sel[0]=address[14],sel[1]=address[13], out=out); 
+*/
+
+    Mux4Way16(a=ramout, b=screenout, c=ramout,
+ d=kbdout,  sel[0]=address[14],sel[1]=address[13], out=out); 
+
+/*
+//램, 스크린, 키보드 중 하나를 출력으로 선택하기 위해 Mux 이용하는 방법   
+
+//14비트가 0이면 램, 14비트가 1인데 13비트가 0이면 스크린, 14비트가 1인데 13비트가 1이면 키보드
+    Mux16(a=ramout, b=kbdorscreenout, sel=address[14], out=out);  //램이냐 스크린이냐 키보드냐
+//14비트가 1일때,       13비트가 0이면 스크린, 1이면 키보드
+    Mux16(a=screenout, b=kbdout, sel=address[13], out=kbdorscreenout);    //스크린이냐 키보드냐
+*/
+
+
+/*
+//14비트가 0일떄, 13비트가 0이면 램의 상단, 13비트가 1이면 램의 하단
+    Mux16(a=ramout1, b=ramout2, sel=address[13], out=ramout);
+*/
+
+/* 14   13
+   ---------
+    0     0  >>ramout
+    1     0  >>screenout
+    0     1  >>ramout         
+    1     1  >>kbdout
+*/
+
+}

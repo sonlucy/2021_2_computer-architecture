@@ -1,0 +1,153 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/02/ALU.hdl
+
+/**
+ * The ALU (Arithmetic Logic Unit).
+ * Computes one of the following functions:
+ * x+y, x-y, y-x, 0, 1, -1, x, y, -x, -y, !x, !y,
+ * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs, 
+ * according to 6 input bits denoted zx,nx,zy,ny,f,no.
+ * In addition, the ALU computes two 1-bit outputs:
+ * if the ALU output == 0, zr is set to 1; otherwise zr is set to 0;
+ * if the ALU output < 0, ng is set to 1; otherwise ng is set to 0.
+ */
+
+// Implementation: the ALU logic manipulates the x and y inputs
+// and operates on the resulting values, as follows:
+// if (zx == 1) set x = 0        // 16-bit constant
+// if (nx == 1) set x = !x       // bitwise not
+// if (zy == 1) set y = 0        // 16-bit constant
+// if (ny == 1) set y = !y       // bitwise not
+// if (f == 1)  set out = x + y  // integer 2's complement addition
+// if (f == 0)  set out = x & y  // bitwise and
+// if (no == 1) set out = !out   // bitwise not
+// if (out == 0) set zr = 1
+// if (out < 0) set ng = 1
+
+
+CHIP ALU {
+    IN  
+        x[16], y[16],  // 16-bit inputs        
+        zx, // zero the x input?
+        nx, // negate the x input?
+        zy, // zero the y input?
+        ny, // negate the y input?
+        f,  // compute out = x + y (if 1) or x & y (if 0)
+        no; // negate the out output?
+
+        //as;   //산술시프트
+        //ls;   //논리시프트
+        //ro;   //회전시프트
+        
+        //s1=1, s2=0 ->산술, s1=0, s2=1->논리, s1=1, s2=1 ->회전.    
+        s1;   
+        s2;  
+        LoR;  //왼쪽으로 시프트할지 오른쪽으로 시프트할지
+
+    OUT 
+        out[16], // 16-bit output
+        zr, // 1 if (out == 0), 0 otherwise
+        ng; // 1 if (out < 0),  0 otherwise
+
+    PARTS:
+
+
+
+
+
+/*    
+//산술
+    Ashift(x=x, LorR=LoR, out=Axout);
+    Ashift(x=y, LorR=LoR, out=Ayout);
+    Mux(a=x, b=Axout, sel=as, out=out);
+    Mux(a=y, b=Ayout, sel=as, out=out);
+
+//논리
+    Lshift(x=x, LorR=LoR, out=Lxout);
+    Lshift(x=y, LorR=LoR, out=Lyout);
+    Mux(a=x, b=Lxout, sel=ls, out=out);
+    Mux(a=y, b=Lyout, sel=ls, out=out);
+
+//회전
+    Rshift(x=x, LorR=LoR, out=Rxout);
+    Rshift(x=y, LorR=LoR, out=Ryout);
+    Mux(a=x, b=Rxout, sel=ro, out=out);
+    Mux(a=y, b=Ryout, sel=ro, out=out);
+*/
+
+
+
+
+
+
+ 
+    Mux16(a=x, b=false, sel=zx, out=x1);   // if (zx == 1) set x1 = 0
+    
+    Not16(in=x1, out=x2);    // set x2 = !x1
+    Mux16(a=x1, b=x2, sel=nx, out=x3);    // if (nx == 1), set x3=x2
+
+    Mux16(a=y, b=false, sel=zy, out=y1);    // if (zy == 1) set y1 = 0
+
+    Not16(in=y1, out=y2);    // set y2 = !y1
+    Mux16(a=y1, b=y2, sel=ny, out=y3);    // if (ny == 1), set y3=y2
+
+    Add16(a=x3, b=y3, out=addition);    // set addition = x3 + y3 
+    And16(a=x3, b=y3, out=andresult);    // set andresult = x & y 
+    Mux16(a=andresult, b=addition, sel=f, out=maybeout);    // f가 1이면 덧셈, 0이면 곱셈
+    
+    Not16(in=maybeout, out=flippedout);    // flippedout = !maybeout
+    Mux16(a=maybeout, b=flippedout, sel=no, out=out,
+        out[0]=outcopy0,
+        out[1]=outcopy1,
+        out[2]=outcopy2,
+        out[3]=outcopy3,
+        out[4]=outcopy4,
+        out[5]=outcopy5,
+        out[6]=outcopy6,
+        out[7]=outcopy7,
+        out[8]=outcopy8,
+        out[9]=outcopy9,
+        out[10]=outcopy10,
+        out[11]=outcopy11,
+        out[12]=outcopy12,
+        out[13]=outcopy13,
+        out[14]=outcopy14,
+        out[15]=outcopy15
+    );
+
+
+    // Split Out in 2 halves, do a bitwise OR on each to
+    // see if ANY bit in either half is set to 1
+
+    // outlow = 1 if any of out[0..7] is 1
+    Or8Way(in[0]=outcopy0,
+        in[1]=outcopy1,
+        in[2]=outcopy2,
+        in[3]=outcopy3,
+        in[4]=outcopy4,
+        in[5]=outcopy5,
+        in[6]=outcopy6,
+        in[7]=outcopy7,
+        out=outlow);
+    // outhigh = 1 if any of out[8..15] is 1
+    Or8Way(in[0]=outcopy8,
+        in[1]=outcopy9,
+        in[2]=outcopy10,
+        in[3]=outcopy11,
+        in[4]=outcopy12,
+        in[5]=outcopy13,
+        in[6]=outcopy14,
+        in[7]=outcopy15,
+        out=outhigh);
+    Or(a=outlow, b=outhigh, out=onz);
+    Not(in=onz, out=zr);          /////////zr
+
+    Or(a=outcopy15, b=false, out=ng);         ///////     ng
+
+
+
+
+
+}

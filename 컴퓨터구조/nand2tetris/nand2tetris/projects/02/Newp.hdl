@@ -1,0 +1,16 @@
+CHIP Newp{
+IN a[16], b[16], sel[2];
+OUT out[16];
+
+PARTS:
+Ashift(in=a, LorR=sel[0], out=out1);
+Rshift(in=a, LorR=sel[0], out=out2);
+Lshift(in=a, LorR=sel[0], out=out3);
+Xor16(a=a, b=b, out=out4);
+
+Mux16(a=out1,b=out2,sel=sel[0],out=outA);
+Mux16(a=out3,b=out4,sel=sel[0],out=outB);
+
+Mux16(a=outA,b=outB,sel=sel[1],out=out);
+
+}
